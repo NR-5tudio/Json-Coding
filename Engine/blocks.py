@@ -1,0 +1,100 @@
+import rich as r
+import Engine.state as state
+
+# ─── Built-in Handlers ────────────────────────────────────────────────────────
+#
+# Each handler receives (action_value, all_functions, local_vars) and returns
+# either None (keep running) or a value (propagate as return / signal).
+#
+# To add a new built-in block:
+#   1. Write a function  handle_<name>(value, all_functions, local_vars)
+#   2. Register it in BUILTIN_HANDLERS at the bottom: "name": handle_<name>
+#   That's it — no other file changes needed.
+#
+# To remove a built-in block:
+#   1. Delete (or comment out) the handler function
+#   2. Remove its entry from BUILTIN_HANDLERS
+
+
+def handle_var(value, all_functions, local_vars):
+    """Execute a variable-assignment statement: {"var": "x = 5"}"""
+    from Engine.engine import resolve_value
+    stmt   = resolve_value(value, local_vars)
+    merged = {**state.variables, **local_vars}
+    exec(stmt, {}, merged)
+    # Write results back to whichever scope already owns the variable
+    for key, val in merged.items():
+        if key in local_vars:
+            local_vars[key] = val
+        else:
+            state.variables[key] = val
+
+
+def handle_print(value, all_functions, local_vars):
+    """Print a (possibly interpolated) string."""
+    from Engine.engine import resolve_value
+    print(resolve_value(value, local_vars))
+
+
+def handle_input(value, all_functions, local_vars):
+    """Read user input: {"input": ["var_name", "prompt"]} or {"input": "var_name"}"""
+    from Engine.engine import resolve_value
+    if isinstance(value, list) and len(value) == 2:
+        var_name, prompt = value[0], resolve_value(value[1], local_vars)
+    else:
+        var_name, prompt = value, ""
+    result = input(prompt)
+    local_vars[var_name]       = result
+    state.variables[var_name]  = result
+
+
+def handle_return(value, all_functions, local_vars):
+    """Return a value from the current function."""
+    from Engine.engine import resolve_value
+    return resolve_value(value, local_vars)
+
+
+def handle_if(value, all_functions, local_vars):
+    """Conditional branch: {"if": [condition, {"true": ..., "false": ...}]}"""
+    from Engine.engine import eval_condition, dispatch_action
+    condition    = value[0]
+    true_action  = None
+    false_action = None
+    for part in value[1:]:
+        if isinstance(part, dict):
+            if "true"  in part: true_action  = part["true"]
+            if "false" in part: false_action = part["false"]
+    branch = true_action if eval_condition(condition, local_vars) else false_action
+    if branch is not None:
+        return dispatch_action(branch, all_functions, local_vars)
+
+
+def handle_load(value, all_functions, local_vars):
+    """Load an external object file: {"load": {"name": "Player", "source": "player.json"}}"""
+    from Engine.engine import get_functions
+    from Engine.nrjson import nrjson
+    name     = value["name"]
+    obj_data = nrjson.load(value["source"])
+    state.loaded_objects[name] = {
+        "functions": get_functions(obj_data, include_begin=True),
+    }
+
+
+def handle_exit(value, all_functions, local_vars):
+    """Stop the program: {"exit": null}"""
+    return "__exit__"
+
+
+# ─── Block Registry ───────────────────────────────────────────────────────────
+# Maps built-in keyword → handler function.
+# Add or remove entries here to enable/disable blocks.
+
+BUILTIN_HANDLERS = {
+    "var":    handle_var,
+    "print":  handle_print,
+    "input":  handle_input,
+    "return": handle_return,
+    "if":     handle_if,
+    "load":   handle_load,
+    "exit":   handle_exit,
+}
