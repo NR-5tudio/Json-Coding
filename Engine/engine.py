@@ -1,27 +1,60 @@
+import re
 import rich as r
 import Engine.state as state
 from Engine.blocks import BUILTIN_HANDLERS
 
+# ─── Return Signal ────────────────────────────────────────────────────────────
+
+class ReturnValue:
+    """Wraps a function's return value so it doesn't accidentally stop callers."""
+    def __init__(self, value):
+        self.value = value
+
 # ─── Value Helpers ────────────────────────────────────────────────────────────
 
-def resolve_value(val, local_vars):
-    """Substitute {variable} placeholders in strings."""
+def resolve_value(val, local_vars, all_functions=None):
+    """Substitute {placeholder} in strings.
+    
+    Placeholders are resolved in this order:
+      1. local_vars
+      2. state.variables
+      3. all_functions — if the name matches a function, call it and use the return value
+    """
     if not isinstance(val, str):
         return val
+
+    merged = {**state.variables, **local_vars}
+
+    # Find any {placeholder} that is NOT already in merged variables
+    if all_functions:
+        for name in re.findall(r'\{(\w+)\}', val):
+            if name not in merged and name in all_functions:
+                result = call_function(name, None, all_functions, local_vars)
+                merged[name] = result if result is not None else ""
+
     try:
-        return val.format(**{**state.variables, **local_vars})
+        return val.format(**merged)
     except (KeyError, ValueError):
         return val
 
-def resolve_args(val, local_vars):
+
+def resolve_args(val, local_vars, all_functions=None):
     """Resolve placeholders in a value that may be a list or a scalar."""
     if isinstance(val, list):
-        return [resolve_value(v, local_vars) for v in val]
-    return resolve_value(val, local_vars)
+        return [resolve_value(v, local_vars, all_functions) for v in val]
+    return resolve_value(val, local_vars, all_functions)
 
-def eval_condition(condition, local_vars):
+
+def eval_condition(condition, local_vars, all_functions=None):
     """Evaluate a condition string that may contain {variable} placeholders."""
     merged = {**state.variables, **local_vars}
+
+    if all_functions:
+        for name in re.findall(r'\{(\w+)\}', condition):
+            if name not in merged and name in all_functions:
+                result = call_function(name, None, all_functions, local_vars)
+                merged[name] = result if result is not None else ""
+
     try:
         return bool(eval(condition.format(**merged), {}, merged))
     except Exception as e:
@@ -74,7 +107,12 @@ def call_function(func_name, args, all_functions, local_vars):
     elif args is not None and param_names:
         func_locals[param_names[0]] = args
 
-    return run_actions(body[action_start:], all_functions, func_locals)
+    result = run_actions(body[action_start:], all_functions, func_locals)
+
+    # Unwrap ReturnValue here — the caller just gets a plain value (or None)
+    if isinstance(result, ReturnValue):
+        return result.value
+    return None
 
 
 def dispatch_action(action, all_functions, local_vars):
@@ -86,12 +124,12 @@ def dispatch_action(action, all_functions, local_vars):
     if isinstance(action, str):
         if action in all_functions:
             return call_function(action, None, all_functions, local_vars)
-        return resolve_value(action, local_vars)
+        return resolve_value(action, local_vars, all_functions)
     return None
 
 
 def run_actions(actions, all_functions, local_vars=None):
-    """Execute a list of action dicts, stopping early if a value is returned."""
+    """Execute a list of action dicts, stopping early only on ReturnValue or __exit__."""
     if local_vars is None:
         local_vars = {}
 
@@ -100,8 +138,8 @@ def run_actions(actions, all_functions, local_vars=None):
         # Bare string → call as a function
         if isinstance(action, str):
             result = call_function(action, None, all_functions, local_vars)
-            if result is not None:
-                return result
+            if result == "__exit__":
+                return "__exit__"
             continue
 
         if not isinstance(action, dict):
@@ -113,7 +151,7 @@ def run_actions(actions, all_functions, local_vars=None):
             # ── Built-in command ──────────────────────────────────────────────
             if key in BUILTIN_HANDLERS:
                 result = BUILTIN_HANDLERS[key](val, all_functions, local_vars)
-                if result is not None:
+                if isinstance(result, ReturnValue) or result == "__exit__":
                     return result
                 break   # one key per action dict is enough
 
@@ -125,16 +163,16 @@ def run_actions(actions, all_functions, local_vars=None):
                     continue
                 obj        = state.loaded_objects[obj_name]
                 merged_fns = {**all_functions, **obj["functions"]}
-                args       = resolve_args(val, local_vars) if val is not None else None
+                args       = resolve_args(val, local_vars, all_functions) if val is not None else None
                 result     = call_function(func_name, args, merged_fns, local_vars)
-                if result is not None:
-                    return result
+                if result == "__exit__":
+                    return "__exit__"
 
             # ── Regular function call ─────────────────────────────────────────
             else:
-                args   = resolve_args(val, local_vars) if val is not None else None
+                args   = resolve_args(val, local_vars, all_functions) if val is not None else None
                 result = call_function(key, args, all_functions, local_vars)
-                if result is not None:
-                    return result
+                if result == "__exit__":
+                    return "__exit__"
 
     return None

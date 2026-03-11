@@ -19,7 +19,7 @@ import Engine.state as state
 def handle_var(value, all_functions, local_vars):
     """Execute a variable-assignment statement: {"var": "x = 5"}"""
     from Engine.engine import resolve_value
-    stmt   = resolve_value(value, local_vars)
+    stmt   = resolve_value(value, local_vars, all_functions)
     merged = {**state.variables, **local_vars}
     exec(stmt, {}, merged)
     # Write results back to whichever scope already owns the variable
@@ -30,28 +30,36 @@ def handle_var(value, all_functions, local_vars):
             state.variables[key] = val
 
 
+def handle_colored_print(value, all_functions, local_vars):
+    """Print a colored (possibly interpolated) string using rich."""
+    from Engine.engine import resolve_value
+    Color = value[0]
+    Text  = resolve_value(value[1], local_vars, all_functions)
+    r.print(f"[{Color}]{Text}[/{Color}]")
+
+
 def handle_print(value, all_functions, local_vars):
     """Print a (possibly interpolated) string."""
     from Engine.engine import resolve_value
-    print(resolve_value(value, local_vars))
+    print(resolve_value(value, local_vars, all_functions))
 
 
 def handle_input(value, all_functions, local_vars):
     """Read user input: {"input": ["var_name", "prompt"]} or {"input": "var_name"}"""
     from Engine.engine import resolve_value
     if isinstance(value, list) and len(value) == 2:
-        var_name, prompt = value[0], resolve_value(value[1], local_vars)
+        var_name, prompt = value[0], resolve_value(value[1], local_vars, all_functions)
     else:
         var_name, prompt = value, ""
     result = input(prompt)
-    local_vars[var_name]       = result
-    state.variables[var_name]  = result
+    local_vars[var_name]      = result
+    state.variables[var_name] = result
 
 
 def handle_return(value, all_functions, local_vars):
-    """Return a value from the current function."""
-    from Engine.engine import resolve_value
-    return resolve_value(value, local_vars)
+    """Return a value from the current function only — does not stop the caller."""
+    from Engine.engine import resolve_value, ReturnValue
+    return ReturnValue(resolve_value(value, local_vars, all_functions))
 
 
 def handle_if(value, all_functions, local_vars):
@@ -64,17 +72,17 @@ def handle_if(value, all_functions, local_vars):
         if isinstance(part, dict):
             if "true"  in part: true_action  = part["true"]
             if "false" in part: false_action = part["false"]
-    branch = true_action if eval_condition(condition, local_vars) else false_action
+    branch = true_action if eval_condition(condition, local_vars, all_functions) else false_action
     if branch is not None:
         return dispatch_action(branch, all_functions, local_vars)
 
 
 def handle_load(value, all_functions, local_vars):
-    """Load an external object file: {"load": {"name": "Player", "source": "player.json"}}"""
+    """Load an external object file: {"load": ["Player", player.json"]}"""
     from Engine.engine import get_functions
     from Engine.nrjson import nrjson
-    name     = value["name"]
-    obj_data = nrjson.load(value["source"])
+    name     = value[0]
+    obj_data = nrjson.load(value[1])
     state.loaded_objects[name] = {
         "functions": get_functions(obj_data, include_begin=True),
     }
@@ -90,11 +98,12 @@ def handle_exit(value, all_functions, local_vars):
 # Add or remove entries here to enable/disable blocks.
 
 BUILTIN_HANDLERS = {
-    "var":    handle_var,
-    "print":  handle_print,
-    "input":  handle_input,
-    "return": handle_return,
-    "if":     handle_if,
-    "load":   handle_load,
-    "exit":   handle_exit,
+    "var":           handle_var,
+    "print":         handle_print,
+    "colored print": handle_colored_print,
+    "input":         handle_input,
+    "return":        handle_return,
+    "if":            handle_if,
+    "load":          handle_load,
+    "exit":          handle_exit,
 }
