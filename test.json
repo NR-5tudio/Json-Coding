@@ -1,0 +1,13 @@
+{
+    "begin": [
+        {"load": {"name": "Player", "source": "player.json"}}
+    ],
+
+    "/update": [
+
+    ],
+
+    "custom_function_main": [
+        {"call": "Player.custom_function", "now it will work!": ""}
+    ]
+}

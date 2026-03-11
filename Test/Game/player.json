@@ -4,7 +4,7 @@
     ],
 
     "update": [
-        {"print": "This will work {Health}"}
+        {"print": "This will work: {Health}"}
     ],
 
     "custom_function": [

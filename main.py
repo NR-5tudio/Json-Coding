@@ -1,13 +1,24 @@
-import pyray as pr
 import json
 import EasyJson as nrjson
+import sys
+from rich import print
+Error = False
+path = None
+if len(sys.argv) > 1:
+    arg = sys.argv
+    path = arg[1]
 
-data = nrjson.Load("main.json")
+
+else:
+    print("")
+    exit()
 
 
-settings = data["main"]
-print(settings)
-pr.init_window(settings["width"], settings["height"], settings["title"])
+
+
+data = nrjson.Load(path)
+
+
 # Load JSON
 
 # Variables dict
@@ -26,10 +37,11 @@ def run_actions(actions):
 
 # Run begin (variables like Health are created here)
 run_actions(data.get("begin", []))
+running = True
+while ("update" in data) and running:
+    pass 
 
-# Main loop for update
-while not pr.window_should_close():
-    pr.begin_drawing()
-    pr.clear_background(pr.BLACK)
-    run_actions(data.get("update", []))
-    pr.end_drawing()
+print("\n" * 5)
+if not Error:
+    print("[green]PROGRAM EXECUTION COMPLETED[/green]")
+    print("- Script: ", sys.argv[0])
