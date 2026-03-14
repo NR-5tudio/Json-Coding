@@ -1,9 +1,11 @@
 # Scene Description:
-This scene shows how json engine check, make, and read a file
 
-# Timeline:
-### 1. **does_MyFile_exist.json (First Attempt)**
-- **Code:**
+This scene demonstrates how the JSON engine can check for, create, and read files through a series of sequential operations.
+
+## Timeline
+
+### Step 1: **Initial File Existence Check** (`does_MyFile_exist.json`)
+
 ```json
 {
     "begin":
@@ -22,29 +24,34 @@ This scene shows how json engine check, make, and read a file
         }
     ],
 
-    
     "Yes": 
     [
         {
-            "print": "Yes, the file does exists"
+            "print": "Yes, the file does exist"
         }
     ],
 
     "No": 
     [
         {
-            "print": "No, the file doesn't exists"
+            "print": "No, the file does not exist"
         }
     ]
 }
 ```
-print if the file `My File.txt` exists (True/False)
-**If True**: Call the function 'Yes' -> prints "Yes, the file does exists"
-**If False**: Call the function 'No' -> prints "No, the file doesn't exists"
-- **Output:** `False` - The file does not exist
 
-### 2. **make_MyFile.json**
-- **Code:**
+**Process:**
+1. First, checks if `My File.txt` exists and prints the boolean result
+2. Evaluates the condition:
+   - If `True`: Executes the 'Yes' function, printing "Yes, the file does exist"
+   - If `False`: Executes the 'No' function, printing "No, the file does not exist"
+
+**Output:** `False` - The file does not exist yet
+
+---
+
+### Step 2: **File Creation** (`make_MyFile.json`)
+
 ```json
 {
     "begin": 
@@ -59,14 +66,22 @@ print if the file `My File.txt` exists (True/False)
     ]
 }
 ```
-- **Action:** Creates the file (no output shown)
 
-### 3. **does_MyFile_exist.json (Second Attempt) **
-- **Code:** (same as the above but 'Yes' instead)
-- **Output:** `True` - The file now exists
+**Action:** Creates `My File.txt` with the content "Hello from json!"
+**Output:** (No visible output - file is created silently)
 
-### 4. **Read File Contents**
-- **Code:**
+---
+
+### Step 3: **Secondary File Existence Check** (`does_MyFile_exist.json`)
+
+**Code:** (Same as Step 1, but this time the 'Yes' branch executes)
+
+**Output:** `True` - The file now exists after creation
+
+---
+
+### Step 4: **File Content Reading**
+
 ```json
 {
     "begin": 
@@ -77,4 +92,18 @@ print if the file `My File.txt` exists (True/False)
     ]
 }
 ```
-- **Output:** `Hello from json!` - Successfully reads the file content
+
+**Action:** Reads and prints the contents of `My File.txt`
+
+**Output:** `Hello from json!` - Successfully reads the file content
+
+---
+
+## Summary
+
+This sequence demonstrates four fundamental file operations:
+1. **Checking** if a file exists
+2. **Creating** a file with content
+3. **Verifying** the file exists after creation
+4. **Reading** the file content back
+
