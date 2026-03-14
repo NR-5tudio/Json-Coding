@@ -59,11 +59,11 @@ def delta_time(val, all_functions, local_vars):
 
 Game = {
     "show window":          show_window,
-    "is raylib okay":       is_raylib_okay,
-    "window should close":  window_should_close,
-    "clear background":     clear_background,
-    "begin drawing":        begin_drawing,
-    "end drawing":          end_drawing,
-    "draw rectangle":       draw_rectangle,
-    "get delta time":       delta_time
+    "is_raylib_okay":       is_raylib_okay,
+    "window_should close":  window_should_close,
+    "clear_background":     clear_background,
+    "begin_drawing":        begin_drawing,
+    "end_drawing":          end_drawing,
+    "draw_rectangle":       draw_rectangle,
+    "get_delta_time":       delta_time
 }

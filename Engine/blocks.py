@@ -111,20 +111,48 @@ def IncludePackage(value, all_functions, local_vars):
             r.print(f"[red]The package '{including}' does not exist.[/red]")
 
 def write_file(value, all_functions, local_vars):
-    print("Start")
+    file = value[0]
+    string = value[1]
+    try: open(file, 'w').write(string)
+    except Exception as e:
+        print(e)
 
+def reading_file(value, all_functions, local_vars):
+    import os
+    from Engine.engine import ReturnValue
+    value = value[0]
+    if not os.path.exists(value):
+        Content = f"The file '{value}' does not exist"
+        return ReturnValue(Content)
+    file = open(value, 'r')
+    
+    Content = file.read()
+    file.close()
+    
+    return ReturnValue(Content)
+ 
+def does_file_exist(value, all_functions, local_vars):
+    import os
+    from Engine.engine import ReturnValue
+    value = value[0]
+    Exists = os.path.exists(value)
+    return ReturnValue(Exists)
+
+    
 
 BUILTIN_HANDLERS = {
-    "var":           handle_var,
-    "print":         handle_print,
-    "output":        handle_print,
-    "colored print": handle_colored_print,
-    "input":         handle_input,
-    "return":        handle_return,
-    "if":            handle_if,
-    "load":          handle_load,
-    "exit":          handle_exit,
-    "#":             handle_comment,
-    "include":       IncludePackage,
-    "write in file": write_file
+    "var":                      handle_var,
+    "print":                    handle_print,
+    "output":                   handle_print,
+    "colored print":            handle_colored_print,
+    "input":                    handle_input,
+    "return":                   handle_return,
+    "if":                       handle_if,
+    "load":                     handle_load,
+    "exit":                     handle_exit,
+    "#":                        handle_comment,
+    "include":                  IncludePackage,
+    "write_string_to_file":     write_file,
+    "read_file":                reading_file,
+    "does_file_exist":          does_file_exist
 }

@@ -6,5 +6,5 @@ def is_key_down(value, all_functions, local_vars):
     return ReturnValue(keyboard.is_pressed(value))
 
 Keyboard = {
-    "is key down": is_key_down
+    "is_key_down": is_key_down
 }

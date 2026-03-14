@@ -1,0 +1,16 @@
+{
+    "begin": 
+    [
+        {
+            "write_string_to_file": 
+            [
+                "My File.txt",
+                "Hello from json!"
+            ]
+        }
+    ]
+
+
+
+
+}

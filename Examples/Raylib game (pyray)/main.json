@@ -19,18 +19,7 @@
             ]
         },
 
-        {
-            "#": 
-            [
-                "$(window should close)", 
-                {
-                    "true": 
-                    [
-                        {"exit": ""}
-                    ]
-                }
-            ]
-        },
+
         {"begin drawing": ""},
         {"clear background": ""},
         "Player.tick",

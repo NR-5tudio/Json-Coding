@@ -19,9 +19,11 @@ hour = now.hour
 minute = now.minute
 second = now.second
 
-r.print(f"[green]Program Execution Started. | {month}/{day}/{year} | {hour}:{minute}:{second}[/green]")
-
 data = nrjson.load(sys.argv[1])
+
+r.print(f"[yellow]File: {sys.argv[1]}[yellow]")
+r.print(f"[green]Program Execution Started. | {month}/{day}/{year} | {hour}:{minute}:{second}[/green]")
+r.print("-"*100, "\n"*1)
 all_functions = get_functions(data)          # "begin" is NOT callable here (prevents recursion)
 
 run_actions(data.get("begin", []), all_functions)
@@ -40,4 +42,6 @@ day = now.day
 hour = now.hour
 minute = now.minute
 second = now.second
-r.print(f"\n[green]Program Execution Completed. | {month}/{day}/{year} | {hour}:{minute}:{second}[/green]")
+print("\n")
+r.print("-"*100)
+r.print(f"[green]Program Execution Completed. | {month}/{day}/{year} | {hour}:{minute}:{second}[/green]")

@@ -1,0 +1,8 @@
+{
+    "begin": 
+    [
+        {
+            "print": "$(read_file ['My File.txt'])"
+        }
+    ]
+}

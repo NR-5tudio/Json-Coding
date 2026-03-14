@@ -1,0 +1,32 @@
+{
+    "begin":
+    [
+        {"print": "$(does_file_exist ['My File.txt'])"},
+
+        {
+            "if": 
+            [
+                "$(does_file_exist ['My File.txt'])",
+                {
+                    "true": "Yes",
+                    "false": "No"
+                }
+            ]
+        }
+    ],
+
+    
+    "Yes": 
+    [
+        {
+            "print": "Yes, the file does exists"
+        }
+    ],
+
+    "No": 
+    [
+        {
+            "print": "No, the file doesn't exists"
+        }
+    ]
+}
